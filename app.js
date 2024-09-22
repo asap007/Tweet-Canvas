@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { createCanvas, loadImage } = require('canvas');
 const path = require('path');
-const puppeteer = require('puppeteer');
+const playwright = require('playwright');
 const cheerio = require('cheerio');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const rateLimit = require('express-rate-limit');
@@ -122,15 +122,16 @@ async function scrapeTwitterProfileWithRetry(username, maxRetries = 3) {
 }
 
 async function scrapeTwitterProfile(username) {
-  const browser = await puppeteer.launch({
-    headless: 'new', // Enables headless mode
-    executablePath: '/usr/bin/google-chrome-stable', // Make sure this path matches the installed browser
-    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required in many server environments
-  });      
-  const page = await browser.newPage();
+  const browser = await chromium.launch({
+    headless: true, // Enable headless mode
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required for many server environments
+  });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  
   try {
-    console.log(`Navigating to https://twitter.com/${username}`);
-    await page.goto(`https://twitter.com/${username}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    console.log(`Navigating to https://x.com//${username}`);
+    await page.goto(`https://x.com//${username}`, { waitUntil: 'networkidle', timeout: 60000 });
 
     // Wait for the profile information to load
     await page.waitForSelector('h2[aria-level="2"]', { timeout: 60000 });
@@ -155,7 +156,7 @@ async function scrapeTwitterProfile(username) {
     return { name, handle, profilePicUrl };
   } catch (error) {
     console.error('Error during scraping:', error);
-    throw error;
+    throw error; // Rethrow error for further handling if needed
   } finally {
     await browser.close();
   }

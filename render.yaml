@@ -6,11 +6,21 @@ services:
     startCommand: npm start    
     plan: free    
     envVars:      
-      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD        
-        value: "true"    
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "true" # You can now remove this if not needed
     build:      
-      packages:        
-          - google-chrome-stable    
+      packages:
+          - libnss3
+          - libatk-bridge2.0-0
+          - libxcomposite1
+          - libxdamage1
+          - libxrandr2
+          - libasound2
+          - libpangocairo-1.0-0
+          - libcups2
+          - libdrm2
+          - libgbm1
+          - libxkbcommon0
     disk:      
       sizeGB: 1      
       mountPath: /mnt/data
