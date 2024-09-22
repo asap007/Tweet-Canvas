@@ -7,8 +7,10 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
-      - key: NODE_VERSION
-        value: 18.16.1
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: true
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
     buildpacks:
       - heroku/nodejs
       - https://github.com/jontewks/puppeteer-heroku-buildpack

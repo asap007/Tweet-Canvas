@@ -125,8 +125,8 @@ async function scrapeTwitterProfile(username) {
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath()
-  });  
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable'
+  });    
   const page = await browser.newPage();
   try {
     console.log(`Navigating to https://twitter.com/${username}`);
