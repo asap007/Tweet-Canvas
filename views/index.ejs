@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TweetCanvas - Visualize Your Thoughts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="../images/logo.png" type="image/x-icon">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        'twitter-blue': '#1DA1F2',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+        @keyframes loading {
+            0% { content: "---"; }
+            25% { content: "•--"; }
+            50% { content: "••-"; }
+            75% { content: "•••"; }
+            100% { content: "---"; }
+        }
+        .loading::after {
+            content: "---";
+            animation: loading 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex items-center justify-center p-4 font-poppins">
+    <div id="errorContainer" class="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 bg-red-500 text-white p-4 rounded-xl shadow-lg z-50 hidden max-w-md w-full mx-auto text-center"></div>
+    <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 space-y-8 transform transition-all duration-500 hover:scale-105">
+        <div class="flex items-center justify-center space-x-4 mb-4">
+            <img src="../images/logo.png" alt="TweetCanvas Logo" class="w-12 h-12 object-contain rounded-xl float">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-twitter-blue to-blue-600 float">TweetCanvas</h1>
+        </div>
+        <div class="text-center">
+            <p class="text-gray-600 text-sd md:text-md lg:text-lg">Transform your thoughts into captivating visuals</p>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Choose a template:</label>
+                <select id="optionSelect" class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-twitter-blue focus:border-transparent transition-all duration-300">
+                    <option value="screenshot">Tweet Screenshot</option>
+                    <option value="image">Tweet through Image</option>
+                </select>
+            </div>
+            
+            <form id="generateForm" class="space-y-6">
+                <div id="screenshotOptions" class="space-y-4">
+                    <input type="text" id="username" class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-twitter-blue focus:border-transparent transition-all duration-300" placeholder="Twitter Username">
+                </div>
+                
+                <div class="relative">
+                    <textarea id="content" rows="4" class="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-twitter-blue focus:border-transparent resize-none transition-all duration-300" placeholder="What's on your mind? Type your unlimited tweet here..."></textarea>
+                    <div class="absolute bottom-3 right-3 text-xs text-gray-400" id="charCount">0 / 280</div>
+                </div>
+
+                <button id="improveBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Improve with AI
+                </button>
+    
+                <div id="improvedContentContainer" class="hidden space-y-4">
+                    <textarea id="improvedContent" rows="4" class="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-twitter-blue focus:border-transparent resize-none transition-all duration-300" readonly></textarea>
+                    <div class="flex space-x-4">
+                        <button id="replaceBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Replace Content
+                        </button>
+                        <button id="revertBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Revert to Original
+                        </button>
+                    </div>
+                </div>
+                                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Choose a theme:</label>
+                    <div class="flex space-x-4">
+                        <button type="button" class="flex-1 py-2 px-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-twitter-blue template-btn bg-twitter-blue text-white" data-template="light">
+                            Light
+                        </button>
+                        <button type="button" class="flex-1 py-2 px-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-twitter-blue template-btn" data-template="dark">
+                            Dark
+                        </button>
+                    </div>
+                    <input type="hidden" id="templateSelect" value="light">
+                </div>
+                
+                <button id="submitBtn" type="submit" class="w-full bg-gradient-to-r from-twitter-blue to-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-twitter-blue">
+                    Create TweetCanvas
+                </button>
+            </form>
+        </div>
+        
+        <div id="imageContainer" class="hidden space-y-4">
+            <img id="preview" alt="Generated TweetCanvas" class="w-full rounded-xl shadow-lg transform transition-all duration-500 hover:scale-105">
+            <div class="flex space-x-4">
+                <button id="downloadBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Download Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const optionSelect = document.getElementById('optionSelect');
+        const screenshotOptions = document.getElementById('screenshotOptions');
+        const usernameInput = document.getElementById('username');
+        const contentTextarea = document.getElementById('content');
+        const charCount = document.getElementById('charCount');
+        const generateForm = document.getElementById('generateForm');
+        const imageContainer = document.getElementById('imageContainer');
+        const previewImg = document.getElementById('preview');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const templateSelect = document.getElementById('templateSelect');
+        const templateBtns = document.querySelectorAll('.template-btn');
+        const submitBtn = document.getElementById('submitBtn');
+        const improveBtn = document.getElementById('improveBtn');
+        const improvedContentContainer = document.getElementById('improvedContentContainer');
+        const improvedContentTextarea = document.getElementById('improvedContent');
+        const replaceBtn = document.getElementById('replaceBtn');
+        const revertBtn = document.getElementById('revertBtn');
+        
+        let originalContent = '';
+
+        // Add this at the beginning of your script
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'fixed top-4 right-4 lg:right-0 bg-red-500 text-white p-4 rounded-xl shadow-lg z-50 hidden';
+        document.body.appendChild(errorContainer);
+
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.textContent = message;
+            errorContainer.classList.remove('hidden');
+
+            // Check if the screen is narrow (mobile)
+            const isMobile = window.innerWidth < 768;
+
+            gsap.fromTo(errorContainer, 
+                { 
+                    opacity: 0, 
+                    y: isMobile ? -50 : -20,
+                    scale: isMobile ? 0.95 : 1
+                },
+                { 
+                    duration: 0.3, 
+                    opacity: 1, 
+                    y: 0,
+                    scale: 1,
+                    ease: "power3.out",
+                    onComplete: () => {
+                        setTimeout(() => {
+                            gsap.to(errorContainer, { 
+                                duration: 0.3, 
+                                opacity: 0, 
+                                y: isMobile ? -50 : -20,
+                                scale: isMobile ? 0.95 : 1,
+                                ease: "power3.in",
+                                onComplete: () => errorContainer.classList.add('hidden')
+                            });
+                        }, 5000);
+                    }
+                }
+            );
+        }
+
+
+
+
+        gsap.from("body > div", {duration: 1, opacity: 0, y: 50, ease: "power3.out"});
+
+        optionSelect.addEventListener('change', function() {
+            if (this.value === 'screenshot') {
+                gsap.to(screenshotOptions, {duration: 0.3, opacity: 1, height: "auto", display: "block"});
+            } else {
+                gsap.to(screenshotOptions, {duration: 0.3, opacity: 0, height: 0, display: "none"});
+            }
+        });
+
+        contentTextarea.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = `${count} / 280`;
+            charCount.classList.toggle('text-red-500', count > 280);
+            gsap.to(charCount, {duration: 0.3, scale: count > 280 ? 1.1 : 1, ease: "elastic.out(1, 0.3)"});
+        });
+
+        templateBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                templateBtns.forEach(b => b.classList.remove('bg-twitter-blue', 'text-white'));
+                this.classList.add('bg-twitter-blue', 'text-white');
+                templateSelect.value = this.dataset.template;
+                gsap.from(this, {duration: 0.3, scale: 0.9, ease: "back.out(1.7)"});
+            });
+        });
+
+        generateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const option = optionSelect.value;
+            const content = contentTextarea.value;
+            const template = templateSelect.value;
+            const username = usernameInput.value;
+
+            if (content.trim() === '') {
+                showError('Please enter some content for your tweet.');
+                gsap.to(contentTextarea, {duration: 0.1, x: 10, yoyo: true, repeat: 5});
+                return;
+            }
+            
+            if (content.trim() === '') {
+                gsap.to(contentTextarea, {duration: 0.1, x: 10, yoyo: true, repeat: 5});
+                return;
+            }
+            
+            if (option === 'screenshot' && username.trim() === '') {
+                gsap.to(usernameInput, {duration: 0.1, x: 10, yoyo: true, repeat: 5});
+                return;
+            }
+            
+            // Disable buttons and show loading animation
+            submitBtn.disable
+            improveBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            improveBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            submitBtn.innerHTML = '<span class="loading"></span>';
+                        
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        option: option,
+                        text: content, 
+                        template: template,
+                        username: username
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate image');
+                }
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                previewImg.src = imageUrl;
+                gsap.to(imageContainer, {duration: 0.5, opacity: 1, height: "auto", display: "block"});
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                // Re-enable buttons and restore original text
+                submitBtn.disabled = false;
+                improveBtn.disabled = false;
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                improveBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                submitBtn.innerHTML = 'Create TweetCanvas';
+            }
+        });
+
+        improveBtn.addEventListener('click', async () => {
+        const content = contentTextarea.value;
+
+        if (content.trim() === '') {
+            showError('Please enter some content to improve.');
+            gsap.to(contentTextarea, {duration: 0.1, x: 10, yoyo: true, repeat: 5});
+            return;
+        }
+        
+        if (content.trim() === '') {
+            gsap.to(contentTextarea, {duration: 0.1, x: 10, yoyo: true, repeat: 5});
+            return;
+        }
+        
+        // Disable buttons and show loading animation
+        submitBtn.disabled = true;
+        improveBtn.disabled = true;
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        improveBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        improveBtn.innerHTML = '<span class="loading"></span>';
+        
+        try {
+            const response = await fetch('/improve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: content }) // Change 'content' to 'text'
+            });
+            if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to improve content');
+                }
+            const data = await response.json(); // Parse JSON response
+            originalContent = content;
+            improvedContentTextarea.value = data.improvedText; // Use improvedText from response
+            gsap.to(improvedContentContainer, {duration: 0.5, opacity: 1, height: "auto", display: "block"});
+        } catch (error) {
+            console.error('Error:', error);
+            showError(error.message);
+        } finally {
+            // Re-enable buttons and restore original text
+            submitBtn.disabled = false;
+            improveBtn.disabled = false;
+            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            improveBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            improveBtn.innerHTML = 'Improve with AI';
+        }
+    });
+
+
+        replaceBtn.addEventListener('click', () => {
+            contentTextarea.value = improvedContentTextarea.value;
+            gsap.to(improvedContentContainer, {duration: 0.5, opacity: 0, height: 0, display: "none"});
+        });
+
+        revertBtn.addEventListener('click', () => {
+            contentTextarea.value = originalContent;
+            gsap.to(improvedContentContainer, {duration: 0.5, opacity: 0, height: 0, display: "none"});
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = previewImg.src;
+            link.download = 'tweetcanvas.png';
+            link.click();
+            gsap.to(downloadBtn, {duration: 0.3, scale: 0.95, yoyo: true, repeat: 1});
+        });
+    </script>
+</body>
+</html>
