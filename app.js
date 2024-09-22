@@ -123,10 +123,10 @@ async function scrapeTwitterProfileWithRetry(username, maxRetries = 3) {
 
 async function scrapeTwitterProfile(username) {
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable'
-  });    
+    headless: 'new', // Enables headless mode
+    executablePath: '/usr/bin/google-chrome-stable', // Make sure this path matches the installed browser
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required in many server environments
+  });      
   const page = await browser.newPage();
   try {
     console.log(`Navigating to https://twitter.com/${username}`);
