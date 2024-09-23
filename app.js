@@ -7,11 +7,13 @@ const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const rateLimit = require('express-rate-limit');
-
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 
 app.set('trust proxy', 1);
+
+app.use(cors());
 
 
 // Rate limiting
