@@ -38,7 +38,7 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-registerFont(path.join(__dirname, 'public', 'emoji', 'NotoColorEmoji-Regular.ttf'), { family: 'Noto Color Emoji' });
+registerFont('https://cdn.jsdelivr.net/npm/noto-emoji-font@latest/fonts/NotoColorEmoji-Regular.ttf', { family: 'Noto Color Emoji' });
 
 
 const userInfoCache = new Map();
@@ -54,7 +54,7 @@ app.post('/improve', limiter, async (req, res) => {
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Improve the following tweet to make it more engaging, humanizing and concise (max 280 characters) directly give the new content & make sure not to give anything other than new version of the tweet content, direclty give the content: "${text}"`;
+    const prompt = `Improve the following tweet to make it more engaging, humanizing and concise (max 280 characters) directly give the new content & make sure not to give anything other than new version of the tweet content also make sure to not include any emojis in the version, direclty give the content: "${text}"`;
 
     const result = await model.generateContent(prompt);
     const improvedText = result.response.text();
