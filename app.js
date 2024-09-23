@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const { createCanvas, loadImage, registerFont} = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 const path = require('path');
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
@@ -38,7 +38,6 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-registerFont('https://cdn.jsdelivr.net/npm/noto-emoji-font@latest/fonts/NotoColorEmoji-Regular.ttf', { family: 'Noto Color Emoji' });
 
 
 const userInfoCache = new Map();
@@ -54,7 +53,7 @@ app.post('/improve', limiter, async (req, res) => {
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Improve the following tweet to make it more engaging, humanizing and concise (max 280 characters) directly give the new content & make sure not to give anything other than new version of the tweet content also make sure to not include any emojis in the version, direclty give the content: "${text}"`;
+    const prompt = `Improve the following tweet to make it more engaging, humanizing and concise (max 280 characters) directly give the new content & make sure not to give anything other than new version of the tweet content and also make sure not to include any emojis in the output version, direclty give the content: "${text}"`;
 
     const result = await model.generateContent(prompt);
     const improvedText = result.response.text();
@@ -197,14 +196,14 @@ async function generateScreenshotImage(text, colors, userInfo) {
   const ctx = createCanvas(width, minHeight).getContext('2d');
 
   // Calculate text height
-  ctx.font = '22px "Noto Color Emoji", Arial, sans-serif';
+  ctx.font = '22px Arial, sans-serif';
   const maxWidth = width - 80;
   const lines = text.split('\n').flatMap(line => getLines(ctx, line, maxWidth));
   const lineHeight = 32;
   const totalTextHeight = lines.length * lineHeight;
 
   // Calculate total content height (reduced space below text)
-  const contentHeight = 120 + totalTextHeight + 60;
+  const contentHeight = 120 + totalTextHeight + 60; // Reduced from 100 to 60
   const height = Math.max(minHeight, Math.min(maxHeight, contentHeight));
 
   // Create the actual canvas with the calculated height
@@ -248,10 +247,10 @@ async function generateScreenshotImage(text, colors, userInfo) {
   }
 
   // Username and handle (adjusted positions)
-  finalCtx.font = 'bold 22px Arial, "Noto Color Emoji", sans-serif';
+  finalCtx.font = 'bold 22px Arial, sans-serif';
   finalCtx.fillStyle = colors.text;
   finalCtx.fillText(userInfo.name, 110, 35);
-  finalCtx.font = '16px Arial, "Noto Color Emoji", sans-serif';
+  finalCtx.font = '16px Arial, sans-serif';
   finalCtx.fillStyle = colors.text + '80';
   finalCtx.fillText(userInfo.handle, 110, 60);
 
@@ -262,39 +261,48 @@ async function generateScreenshotImage(text, colors, userInfo) {
   } catch (error) {
     console.error('Error loading X logo:', error);
     finalCtx.fillStyle = colors.text;
-    finalCtx.font = 'bold 24px Arial, "Noto Color Emoji", sans-serif';
+    finalCtx.font = 'bold 24px Arial, sans-serif';
     finalCtx.fillText('𝕏', width - 60, 45);
   }
 
   // Tweet text (adjusted starting position)
-  finalCtx.font = '22px Arial, "Noto Color Emoji", sans-serif';
+  finalCtx.font = '22px Arial, sans-serif';
   finalCtx.fillStyle = colors.text;
   const startY = 110;
 
   lines.forEach((line, index) => {
-    finalCtx.fillText(line, 40, startY + index * lineHeight);
+    const words = line.split(' ');
+    let currentX = 40;
+    words.forEach(word => {
+      if (word.startsWith('#') || word.startsWith('@')) {
+        finalCtx.fillStyle = colors.accent;
+      } else {
+        finalCtx.fillStyle = colors.text;
+      }
+      finalCtx.fillText(word, currentX, startY + index * lineHeight);
+      currentX += finalCtx.measureText(word + ' ').width;
+    });
   });
 
   // Time and date (adjusted position)
   const now = new Date();
   const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const dateString = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  finalCtx.font = '16px Arial, "Noto Color Emoji", sans-serif';
+  finalCtx.font = '16px Arial, sans-serif';
   finalCtx.fillStyle = colors.text + '80';
-  finalCtx.fillText(`${timeString} · ${dateString}`, 40, height - 20);
+  finalCtx.fillText(`${timeString} · ${dateString}`, 40, height - 20); // Moved closer to the bottom
 
   return canvas.toBuffer('image/png');
 }
 
-
 async function generatePortraitImage(text, colors, userInfo) {
   const width = 600;
-  const minHeight = 600;
-  const maxHeight = 2000;
-  const ctx = createCanvas(width, 1).getContext('2d');
+  const minHeight = 600; // Minimum height for short content
+  const maxHeight = 2000; // Maximum height to prevent excessively tall images
+  const ctx = createCanvas(width, 1).getContext('2d'); // Temporary canvas for text measurement
 
   // Text setup
-  ctx.font = '32px "Noto Color Emoji", Arial, sans-serif';
+  ctx.font = 'bold 32px Arial, sans-serif';
   const maxWidth = width - 80;
   const lines = text.split('\n').flatMap(line => getLines(ctx, line, maxWidth));
   const lineHeight = 40;
@@ -314,7 +322,7 @@ async function generatePortraitImage(text, colors, userInfo) {
   finalCtx.fillRect(0, 0, width, height);
 
   // Text
-  finalCtx.font = 'bold 32px Arial, "Noto Color Emoji", sans-serif';
+  finalCtx.font = 'bold 32px Arial, sans-serif';
   finalCtx.fillStyle = colors.text;
   let startY = paddingTop;
 
@@ -329,13 +337,12 @@ async function generatePortraitImage(text, colors, userInfo) {
   } catch (error) {
     console.error('Error loading X logo:', error);
     finalCtx.fillStyle = colors.text;
-    finalCtx.font = 'bold 40px Arial, "Noto Color Emoji", sans-serif';
+    finalCtx.font = 'bold 40px Arial, sans-serif';
     finalCtx.fillText('𝕏', width / 2 - 20, height - 30);
   }
 
   return canvas.toBuffer('image/png');
 }
-
 
 
 function getLines(ctx, text, maxWidth) {
